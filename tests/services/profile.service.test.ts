@@ -41,7 +41,7 @@ describe('ProfileService', () => {
   });
 
   describe('followUser', () => {
-    test('shoud return a following property', async () => {
+    test('should return a following property', async () => {
       // Given
       const usernamePayload = 'AnotherUser';
       const usernameAuth = 'RealWorld';
@@ -78,7 +78,7 @@ describe('ProfileService', () => {
       await expect(followUser(usernamePayload, usernameAuth)).resolves.toHaveProperty('following');
     });
 
-    test('shoud throw an error if no user is found', async () => {
+    test('should throw an error if no user is found', async () => {
       // Given
       const usernamePayload = 'AnotherUser';
       const usernameAuth = 'RealWorld';
@@ -92,7 +92,7 @@ describe('ProfileService', () => {
   });
 
   describe('unfollowUser', () => {
-    test('shoud return a following property', async () => {
+    test('should return a following property', async () => {
       // Given
       const usernamePayload = 'AnotherUser';
       const usernameAuth = 'RealWorld';
@@ -131,7 +131,7 @@ describe('ProfileService', () => {
       );
     });
 
-    test('shoud throw an error if no user is found', async () => {
+    test('should throw an error if no user is found', async () => {
       // Given
       const usernamePayload = 'AnotherUser';
       const usernameAuth = 'RealWorld';

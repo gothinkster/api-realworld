@@ -11,6 +11,8 @@ describe('AuthService', () => {
         username: 'RealWorld',
         email: 'realworld@me',
         password: '1234',
+        image: '',
+        demo: false,
       };
 
       const mockedResponse = {
@@ -38,6 +40,8 @@ describe('AuthService', () => {
         username: ' ',
         email: 'realworld@me',
         password: '1234',
+        image: '',
+        demo: false,
       };
 
       // Then
@@ -52,6 +56,8 @@ describe('AuthService', () => {
         username: 'RealWorld',
         email: '  ',
         password: '1234',
+        image: '',
+        demo: false,
       };
 
       // Then
@@ -66,6 +72,8 @@ describe('AuthService', () => {
         username: 'RealWorld',
         email: 'realworld@me',
         password: ' ',
+        image: '',
+        demo: false,
       };
 
       // Then
@@ -80,6 +88,8 @@ describe('AuthService', () => {
         username: 'RealWorld',
         email: 'realworld@me',
         password: '1234',
+        image: '',
+        demo: false,
       };
 
       const mockedExistingUser = {
@@ -230,6 +240,8 @@ describe('AuthService', () => {
         username: 'RealWorld',
         email: 'realworld@me',
         password: '1234',
+        image: '',
+        bio: '',
       };
 
       const mockedResponse = {

@@ -1,9 +1,10 @@
 import { createUser } from '../services/auth.service';
-import { RegisteredUser } from '../models/registered-user.model';
-import { addComment, createArticle } from '../services/article.service';
+import { createArticle } from '../services/article.service';
 import { getProfile } from '../services/profile.service';
+import { UserResponse } from '../models/user.model';
+import { addComment } from '../services/comment.service';
 
-export const generateUser = async (): Promise<RegisteredUser> =>
+export const generateUser = async (): Promise<UserResponse> =>
   createUser({
     username: 'Gerome',
     email: 'gerome@me',
