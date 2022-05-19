@@ -1,9 +1,6 @@
 import prismaMock from '../prisma-mock';
-import {
-  deleteComment,
-  favoriteArticle,
-  unfavoriteArticle,
-} from '../../src/services/article.service';
+import { favoriteArticle, unfavoriteArticle } from '../../src/services/article.service';
+import { deleteComment } from '../../src/services/comment.service';
 
 describe('ArticleService', () => {
   describe('deleteComment', () => {

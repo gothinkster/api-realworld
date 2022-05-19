@@ -1,11 +1,22 @@
 import slugify from 'slugify';
+import { Prisma } from '@prisma/client';
 import prisma from '../../prisma/prisma-client';
 import HttpException from '../models/http-exception.model';
 import { findUserIdByUsername } from './auth.service';
-import profileMapper from '../utils/profile.utils';
 import articleMapper from '../mappers/article.mapper';
+import {
+  ArticleCreatePayload,
+  ArticleFindQuery,
+  ArticleListResponse,
+  ArticleQueryResponse,
+  ArticleResponse,
+} from '../models/article.model';
+import articleSelector from '../selectors/article.selector';
 
-const buildFindAllQuery = (query: any, username: string | undefined) => {
+const buildFindAllQuery = (
+  query: ArticleFindQuery,
+  username: string | undefined,
+): Prisma.ArticleWhereInput => {
   const queries: any = [];
   const orAuthorQuery = [];
   const andAuthorQuery = [];
@@ -66,103 +77,61 @@ const buildFindAllQuery = (query: any, username: string | undefined) => {
   return queries;
 };
 
-export const getArticles = async (query: any, username?: string) => {
-  const andQueries = buildFindAllQuery(query, username);
-  const articlesCount = await prisma.article.count({
-    where: {
-      AND: andQueries,
-    },
-  });
-
-  const articles = await prisma.article.findMany({
-    where: { AND: andQueries },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    skip: Number(query.offset) || 0,
-    take: Number(query.limit) || 10,
-    include: {
-      tagList: {
-        select: {
-          name: true,
-        },
-      },
-      author: {
-        select: {
-          username: true,
-          bio: true,
-          image: true,
-          followedBy: true,
-        },
-      },
-      favoritedBy: true,
-      _count: {
-        select: {
-          favoritedBy: true,
-        },
-      },
-    },
-  });
-
-  return {
-    articles: articles.map(article => articleMapper(article, username)),
-    articlesCount,
-  };
-};
-
-export const getFeed = async (offset: number, limit: number, username: string) => {
-  const user = await findUserIdByUsername(username);
-
-  const articlesCount = await prisma.article.count({
-    where: {
-      author: {
-        followedBy: { some: { id: user?.id } },
-      },
-    },
-  });
-
-  const articles = await prisma.article.findMany({
-    where: {
-      author: {
-        followedBy: { some: { id: user?.id } },
-      },
-    },
+export const findManyArticles = async (
+  query: Prisma.ArticleWhereInput,
+  offset: number,
+  limit: number,
+): Promise<ArticleQueryResponse[]> =>
+  prisma.article.findMany({
+    where: { AND: query },
     orderBy: {
       createdAt: 'desc',
     },
     skip: offset || 0,
     take: limit || 10,
-    include: {
-      tagList: {
-        select: {
-          name: true,
-        },
-      },
-      author: {
-        select: {
-          username: true,
-          bio: true,
-          image: true,
-          followedBy: true,
-        },
-      },
-      favoritedBy: true,
-      _count: {
-        select: {
-          favoritedBy: true,
-        },
-      },
-    },
+    select: articleSelector,
   });
+
+export const getArticles = async (
+  query: ArticleFindQuery,
+  username?: string,
+): Promise<ArticleListResponse> => {
+  const queries = buildFindAllQuery(query, username);
+
+  const articles = await findManyArticles(queries, Number(query.offset), Number(query.limit));
 
   return {
     articles: articles.map(article => articleMapper(article, username)),
-    articlesCount,
+    articlesCount: articles.length,
   };
 };
 
-export const createArticle = async (article: any, username: string) => {
-  const { title, description, body, tagList } = article;
+export const getFeed = async (
+  offset: number,
+  limit: number,
+  username: string,
+): Promise<ArticleListResponse> => {
+  const user = await findUserIdByUsername(username);
+
+  const authorQuery = Prisma.validator<Prisma.ArticleWhereInput>()({
+    author: {
+      followedBy: { some: { id: user?.id } },
+    },
+  });
+
+  const articles = await findManyArticles(authorQuery, offset, limit);
+
+  return {
+    articles: articles.map(article => articleMapper(article, username)),
+    articlesCount: articles.length,
+  };
+};
+
+export const createArticle = async (
+  articlePayload: ArticleCreatePayload,
+  username: string,
+): Promise<ArticleResponse> => {
+  const { title, description, body, tagList } = articlePayload;
   const tags = Array.isArray(tagList) ? tagList : [];
 
   if (!title) {
@@ -194,7 +163,7 @@ export const createArticle = async (article: any, username: string) => {
     throw new HttpException(422, { errors: { title: ['must be unique'] } });
   }
 
-  const { authorId, id, ...createdArticle } = await prisma.article.create({
+  const article = await prisma.article.create({
     data: {
       title,
       description,
@@ -212,58 +181,18 @@ export const createArticle = async (article: any, username: string) => {
         },
       },
     },
-    include: {
-      tagList: {
-        select: {
-          name: true,
-        },
-      },
-      author: {
-        select: {
-          username: true,
-          bio: true,
-          image: true,
-          followedBy: true,
-        },
-      },
-      favoritedBy: true,
-      _count: {
-        select: {
-          favoritedBy: true,
-        },
-      },
-    },
+    select: articleSelector,
   });
 
-  return articleMapper(createdArticle, username);
+  return articleMapper(article, username);
 };
 
-export const getArticle = async (slug: string, username?: string) => {
+export const getArticle = async (slug: string, username?: string): Promise<ArticleResponse> => {
   const article = await prisma.article.findUnique({
     where: {
       slug,
     },
-    include: {
-      tagList: {
-        select: {
-          name: true,
-        },
-      },
-      author: {
-        select: {
-          username: true,
-          bio: true,
-          image: true,
-          followedBy: true,
-        },
-      },
-      favoritedBy: true,
-      _count: {
-        select: {
-          favoritedBy: true,
-        },
-      },
-    },
+    select: articleSelector,
   });
 
   if (!article) {
@@ -273,7 +202,7 @@ export const getArticle = async (slug: string, username?: string) => {
   return articleMapper(article, username);
 };
 
-const disconnectArticlesTags = async (slug: string) => {
+const disconnectArticlesTags = async (slug: string): Promise<void> => {
   await prisma.article.update({
     where: {
       slug,
@@ -286,11 +215,15 @@ const disconnectArticlesTags = async (slug: string) => {
   });
 };
 
-export const updateArticle = async (article: any, slug: string, username: string) => {
+export const updateArticle = async (
+  article: ArticleCreatePayload,
+  slug: string,
+  username: string,
+): Promise<ArticleResponse> => {
   let newSlug = null;
   const user = await findUserIdByUsername(username);
 
-  const existingArticle = await await prisma.article.findFirst({
+  const existingArticle = await prisma.article.findFirst({
     where: {
       slug,
     },
@@ -356,34 +289,14 @@ export const updateArticle = async (article: any, slug: string, username: string
         connectOrCreate: tagList,
       },
     },
-    include: {
-      tagList: {
-        select: {
-          name: true,
-        },
-      },
-      author: {
-        select: {
-          username: true,
-          bio: true,
-          image: true,
-          followedBy: true,
-        },
-      },
-      favoritedBy: true,
-      _count: {
-        select: {
-          favoritedBy: true,
-        },
-      },
-    },
+    select: articleSelector,
   });
 
   return articleMapper(updatedArticle, username);
 };
 
-export const deleteArticle = async (slug: string, username: string) => {
-  const existingArticle = await await prisma.article.findFirst({
+export const deleteArticle = async (slug: string, username: string): Promise<void> => {
+  const article = await prisma.article.findFirst({
     where: {
       slug,
     },
@@ -396,11 +309,11 @@ export const deleteArticle = async (slug: string, username: string) => {
     },
   });
 
-  if (!existingArticle) {
+  if (!article) {
     throw new HttpException(404, {});
   }
 
-  if (existingArticle.author.username !== username) {
+  if (article.author.username !== username) {
     throw new HttpException(403, {
       message: 'You are not authorized to delete this article',
     });
@@ -412,157 +325,13 @@ export const deleteArticle = async (slug: string, username: string) => {
   });
 };
 
-export const getCommentsByArticle = async (slug: string, username?: string) => {
-  const queries = [];
-
-  queries.push({
-    author: {
-      demo: true,
-    },
-  });
-
-  if (username) {
-    queries.push({
-      author: {
-        username,
-      },
-    });
-  }
-
-  const comments = await prisma.article.findUnique({
-    where: {
-      slug,
-    },
-    include: {
-      comments: {
-        where: {
-          OR: queries,
-        },
-        select: {
-          id: true,
-          createdAt: true,
-          updatedAt: true,
-          body: true,
-          author: {
-            select: {
-              username: true,
-              bio: true,
-              image: true,
-              followedBy: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  const result = comments?.comments.map(comment => ({
-    ...comment,
-    author: {
-      username: comment.author.username,
-      bio: comment.author.bio,
-      image: comment.author.image,
-      following: comment.author.followedBy.some(follow => follow.username === username),
-    },
-  }));
-
-  return result;
-};
-
-export const addComment = async (body: string, slug: string, username: string) => {
-  if (!body) {
-    throw new HttpException(422, { errors: { body: ["can't be blank"] } });
-  }
-
-  const user = await findUserIdByUsername(username);
-
-  const article = await prisma.article.findUnique({
-    where: {
-      slug,
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  const comment = await prisma.comment.create({
-    data: {
-      body,
-      article: {
-        connect: {
-          id: article?.id,
-        },
-      },
-      author: {
-        connect: {
-          id: user?.id,
-        },
-      },
-    },
-    include: {
-      author: {
-        select: {
-          username: true,
-          bio: true,
-          image: true,
-          followedBy: true,
-        },
-      },
-    },
-  });
-
-  return {
-    id: comment.id,
-    createdAt: comment.createdAt,
-    updatedAt: comment.updatedAt,
-    body: comment.body,
-    author: {
-      username: comment.author.username,
-      bio: comment.author.bio,
-      image: comment.author.image,
-      following: comment.author.followedBy.some(follow => follow.id === user?.id),
-    },
-  };
-};
-
-export const deleteComment = async (id: number, username: string) => {
-  const comment = await prisma.comment.findFirst({
-    where: {
-      id,
-      author: {
-        username,
-      },
-    },
-    select: {
-      author: {
-        select: {
-          username: true,
-        },
-      },
-    },
-  });
-
-  if (!comment) {
-    throw new HttpException(404, {});
-  }
-
-  if (comment.author.username !== username) {
-    throw new HttpException(403, {
-      message: 'You are not authorized to delete this comment',
-    });
-  }
-
-  await prisma.comment.delete({
-    where: {
-      id,
-    },
-  });
-};
-
-export const favoriteArticle = async (slugPayload: string, usernameAuth: string) => {
+export const favoriteArticle = async (
+  slugPayload: string,
+  usernameAuth: string,
+): Promise<ArticleResponse> => {
   const user = await findUserIdByUsername(usernameAuth);
 
-  const { _count, ...article } = await prisma.article.update({
+  const article = await prisma.article.update({
     where: {
       slug: slugPayload,
     },
@@ -573,44 +342,19 @@ export const favoriteArticle = async (slugPayload: string, usernameAuth: string)
         },
       },
     },
-    include: {
-      tagList: {
-        select: {
-          name: true,
-        },
-      },
-      author: {
-        select: {
-          username: true,
-          bio: true,
-          image: true,
-          followedBy: true,
-        },
-      },
-      favoritedBy: true,
-      _count: {
-        select: {
-          favoritedBy: true,
-        },
-      },
-    },
+    select: articleSelector,
   });
 
-  const result = {
-    ...article,
-    author: profileMapper(article.author, usernameAuth),
-    tagList: article?.tagList.map(tag => tag.name),
-    favorited: article.favoritedBy.some(favorited => favorited.id === user?.id),
-    favoritesCount: _count?.favoritedBy,
-  };
-
-  return result;
+  return articleMapper(article, usernameAuth);
 };
 
-export const unfavoriteArticle = async (slugPayload: string, usernameAuth: string) => {
+export const unfavoriteArticle = async (
+  slugPayload: string,
+  usernameAuth: string,
+): Promise<ArticleResponse> => {
   const user = await findUserIdByUsername(usernameAuth);
 
-  const { _count, ...article } = await prisma.article.update({
+  const article = await prisma.article.update({
     where: {
       slug: slugPayload,
     },
@@ -621,36 +365,8 @@ export const unfavoriteArticle = async (slugPayload: string, usernameAuth: strin
         },
       },
     },
-    include: {
-      tagList: {
-        select: {
-          name: true,
-        },
-      },
-      author: {
-        select: {
-          username: true,
-          bio: true,
-          image: true,
-          followedBy: true,
-        },
-      },
-      favoritedBy: true,
-      _count: {
-        select: {
-          favoritedBy: true,
-        },
-      },
-    },
+    select: articleSelector,
   });
 
-  const result = {
-    ...article,
-    author: profileMapper(article.author, usernameAuth),
-    tagList: article?.tagList.map(tag => tag.name),
-    favorited: article.favoritedBy.some(favorited => favorited.id === user?.id),
-    favoritesCount: _count?.favoritedBy,
-  };
-
-  return result;
+  return articleMapper(article, usernameAuth);
 };
