@@ -52,7 +52,17 @@ app.get('/', (req: Request, res: Response) => {
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.use(Sentry.Handlers.errorHandler());
+app.use(
+  Sentry.Handlers.errorHandler({
+    shouldHandleError(error) {
+      // Capture all 500 errors
+      if (error.status === 500) {
+        return true;
+      }
+      return false;
+    },
+  }),
+);
 
 /* eslint-disable */
 app.use((err: Error | HttpException, req: Request, res: Response, next: NextFunction) => {
