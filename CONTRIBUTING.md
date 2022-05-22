@@ -43,7 +43,7 @@ You can file new issues by selecting from our [new issue templates][github-choos
 
 Before you submit your Pull Request (PR) consider the following guidelines:
 
-1. Search [GitHub](https://github.com/gothinkster/node-express-prisma-v1-official-app/pulls) for an open or closed PR
+1. Search [GitHub](https://github.com/gothinkster/api-realworld/pulls) for an open or closed PR
    that relates to your submission. You don't want to duplicate effort.
 1. Be sure that an issue describes the problem you're fixing, or documents the design for the feature you'd like to add.
    Discussing the design up front helps to ensure that we're ready to accept your work.
@@ -65,7 +65,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
    git push origin my-fix-branch
    ```
 
-1. In GitHub, send a pull request to `node-express-prisma-v1-official-app:main`.
+1. In GitHub, send a pull request to `api-realworld:main`.
 
 - If we suggest changes then:
 
@@ -189,10 +189,10 @@ BREAKING CHANGE:
 change login route to /users/login
 ```
 
-[coc]: https://github.com/gothinkster/node-express-prisma-v1-official-app/blob/main/CODE_OF_CONDUCT.md
-[github]: https://github.com/gothinkster/node-express-prisma-v1-official-app
-[github-issue]: https://github.com/gothinkster/node-express-prisma-v1-official-app/issues/new?assignees=&labels=bug&template=---bug-report.md&title=
+[coc]: https://github.com/gothinkster/api-realworld/blob/main/CODE_OF_CONDUCT.md
+[github]: https://github.com/gothinkster/api-realworld
+[github-issue]: https://github.com/gothinkster/api-realworld/issues/new?assignees=&labels=bug&template=---bug-report.md&title=
 [github-feature]: https://github.com/gothinkster/realworld/issues/new?assignees=&labels=enhancement&template=---feature-request.md&title=
-[github-choose]: https://github.com/gothinkster/node-express-prisma-v1-official-app/issues/new/choose
+[github-choose]: https://github.com/gothinkster/api-realworld/issues/new/choose
 [github-discussions]: https://github.com/gothinkster/realworld/discussions
 [github-spec]: https://github.com/gothinkster/realworld/tree/master/spec

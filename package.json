@@ -1,5 +1,5 @@
 {
-  "name": "express-prisma-realworld-official-app",
+  "name": "api-realworld",
   "version": "1.0.0",
   "description": "Node.js, Express.js & Prisma RealWorld official app",
   "main": "index.js",

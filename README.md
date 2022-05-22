@@ -18,7 +18,7 @@ run `git clone`
 > [NodeJS](https://nodejs.dev/) required
 
 ```
-cd node-express-prisma-v1-official-app
+cd api-realworld
 npm install
 ```
 
